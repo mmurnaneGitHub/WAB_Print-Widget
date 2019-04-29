@@ -1,3 +1,19 @@
+///////////////////////////////////////////////////////////////////////////
+// Copyright © Esri. All Rights Reserved.
+//
+// Licensed under the Apache License Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+///////////////////////////////////////////////////////////////////////////
+
 define([
   'dojo/_base/declare',
   'dijit/_WidgetBase',
@@ -6,10 +22,10 @@ define([
   'esri/tasks/PrintTask',
   "esri/tasks/PrintParameters",
   "esri/tasks/PrintTemplate",
-  "esri/SpatialReference",  //added MJM
   "esri/request",
   'esri/lang',
   'esri/arcgis/utils',
+  'esri/SpatialReference',
   'dojo/_base/config',
   'dojo/_base/lang',
   'dojo/_base/array',
@@ -25,9 +41,10 @@ define([
   'dojo/aspect',
   'dojo/query',
   'jimu/LayerInfos/LayerInfos',
-  'jimu/dijit/LoadingShelter',
+  'jimu/dijit/LoadingIndicator',
   'jimu/dijit/Message',
   'jimu/utils',
+  'jimu/SpatialReference/srUtils',
   'dojo/on',
   'dijit/popup',
   'dijit/form/ValidationTextBox',
@@ -51,10 +68,10 @@ define([
   PrintTask,
   PrintParameters,
   PrintTemplate,
-  SpatialReference,
   esriRequest,
   esriLang,
   arcgisUtils,
+  SpatialReference,
   dojoConfig,
   lang,
   array,
@@ -70,9 +87,10 @@ define([
   aspect,
   query,
   LayerInfos,
-  LoadingShelter,
+  LoadingIndicator,
   Message,
   utils,
+  srUtils,
   on,
   popup,
   ValidationTextBox) {
@@ -111,14 +129,14 @@ define([
       this.printparams = new PrintParameters();
       this.printparams.map = this.map;
       //fix issue #7141
-       //this.printparams.outSpatialReference = this.map.spatialReference;
-
-      //MJM - Fix scale bar since the most of the data is in 2927 - https://developers.arcgis.com/javascript/3/jsapi/printparameters-amd.html
-      //this.printparams.outSpatialReference = new SpatialReference(2927);  //Tacoma SR - Shift to NW as of 9/4/2018 (IT RECENTLY REDID IMAGERY SERVICES)
-      this.printparams.outSpatialReference = new SpatialReference(2286);  //Tacoma SR - Works as of 9/4/2018
+      // this.printparams.outSpatialReference = this.map.spatialReference;
+      
+      //MJM - Fix scale bar since the most of the data is in 2927 - https://developers.arcgis.com/javascript/3/jsapi/printparameters-amd.html	
+      //this.printparams.outSpatialReference = new SpatialReference(2927);  //Tacoma SR - Shift to NW as of 9/4/2018 (IT RECENTLY REDID IMAGERY SERVICES)	
+      this.printparams.outSpatialReference = new SpatialReference(2286);  //Tacoma SR - Works as of 9/4/2018	
       //console.error(2286);
-
-      this.shelter = new LoadingShelter({
+      
+      this.shelter = new LoadingIndicator({
         hidden: true
       });
       this.shelter.placeAt(this.domNode);
@@ -129,6 +147,24 @@ define([
       this.authorNode.set('value', this.defaultAuthor);
       this.copyrightNode.set('value', this.defaultCopyright);
       this.copyrightNode.set('readOnly', !this.copyrightEditable);
+
+      srUtils.loadResource().then(lang.hitch(this, function() {
+        var wkidLabel;
+        if (srUtils.isValidWkid(this.map.spatialReference.wkid)) {
+          this.wkidInput.set('value', this.map.spatialReference.wkid);
+          wkidLabel = srUtils.getSRLabel(this.map.spatialReference.wkid);
+          this.wkidLabel.innerHTML = wkidLabel;
+          this.wkidLabel.title = wkidLabel;
+        } else {
+          this.wkidInput.set('value', '');
+          this.wkidLabel.innerHTML = '';
+          this.wkidLabel.title = '';
+        }
+        this.wkidInput.set('invalidMessage', this.nls.invalidWkid);
+        this.wkidInput.validator = function(value) {
+          return !value || value.trim() === '' || srUtils.isValidWkid(+value);
+        };
+      }));
 
       var serviceUrl = portalUrlUtils.setHttpProtocol(this.printTaskURL);
       var portalNewPrintUrl = portalUrlUtils.getNewPrintUrl(this.appConfig.portalUrl);
@@ -206,6 +242,18 @@ define([
           '_createOperationalLayers',
           lang.hitch(this, '_excludeInvalidLegend')
         );
+      }
+    },
+
+    _onOutputSRChange: function(newValue) {
+      var wkidLabel;
+      if (srUtils.isValidWkid(+newValue)) {
+        wkidLabel = srUtils.getSRLabel(+newValue);
+        this.wkidLabel.innerHTML = wkidLabel;
+        this.wkidLabel.title = wkidLabel;
+      } else {
+        this.wkidLabel.innerHTML = '';
+        this.wkidLabel.title = '';
       }
     },
 
@@ -466,6 +514,11 @@ define([
       }
     },
 
+    closeSettings: function() {
+      popup.close(this.settingsDialog);
+      this._showSettings = false;
+    },
+
     showSettings: function(event) {
       event.preventDefault();
       event.stopPropagation();
@@ -610,6 +663,12 @@ define([
         this.printparams.extraParameters = { // come from source code of jsapi
           printFlag: true
         };
+        // reset outSpatialReference
+        this.printparams.outSpatialReference = undefined;
+        var outWkid = +this.wkidInput.get('value');
+        if (srUtils.isValidWkid(outWkid) && outWkid !== this.map.spatialReference.wkid) {
+          this.printparams.outSpatialReference = new SpatialReference(outWkid);
+        }
         var fileHandel = this.printTask.execute(this.printparams);
 
         var result = new printResultDijit({
