@@ -130,7 +130,12 @@ define([
       this.printparams.map = this.map;
       //fix issue #7141
       // this.printparams.outSpatialReference = this.map.spatialReference;
-
+      
+      //MJM - Fix scale bar since the most of the data is in 2927 - https://developers.arcgis.com/javascript/3/jsapi/printparameters-amd.html	
+      //this.printparams.outSpatialReference = new SpatialReference(2927);  //Tacoma SR - Shift to NW as of 9/4/2018 (IT RECENTLY REDID IMAGERY SERVICES)	
+      this.printparams.outSpatialReference = new SpatialReference(2286);  //Tacoma SR - Works as of 9/4/2018	
+      //console.error(2286);
+      
       this.shelter = new LoadingIndicator({
         hidden: true
       });
