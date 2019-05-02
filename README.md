@@ -1,5 +1,5 @@
 # WAB_Print-Widget
-Customized Web AppBuilder Print Widget.
+Customized Web AppBuilder Print Widget to fix scaling issues.
 
 Version 2.12
 
