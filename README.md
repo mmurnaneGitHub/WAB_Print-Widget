@@ -3,4 +3,6 @@ Customized Web AppBuilder Print Widget.
 
 Version 2.12
 
-Author: Mike Murnane mmurnane@cityoftacoma.org
+INSTRUCTIONS:
+
+Copy Print.js to \widgets\Print\Print.js
