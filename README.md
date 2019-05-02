@@ -5,4 +5,4 @@ Version 2.12
 
 INSTRUCTIONS:
 
-Copy Print.js to \widgets\Print\Print.js
+1. Copy Print.js to \widgets\Print\Print.js
