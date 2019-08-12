@@ -129,12 +129,11 @@ define([
       this.printparams = new PrintParameters();
       this.printparams.map = this.map;
       //fix issue #7141
-      // this.printparams.outSpatialReference = this.map.spatialReference;
-      
+      // this.printparams.outSpatialReference = this.map.spatialReference;  //MJM - uncomment default - {wkid: 102100}
       //MJM - Fix scale bar since the most of the data is in 2927 - https://developers.arcgis.com/javascript/3/jsapi/printparameters-amd.html	
       //this.printparams.outSpatialReference = new SpatialReference(2927);  //Tacoma SR - Shift to NW as of 9/4/2018 (IT RECENTLY REDID IMAGERY SERVICES)	
-      this.printparams.outSpatialReference = new SpatialReference(2286);  //Tacoma SR - Works as of 9/4/2018	
-      //console.error(2286);
+      this.printparams.outSpatialReference = new SpatialReference(2286);  //Tacoma SR - Works as of 9/4/2018	- need to use print queue .../Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task
+      //console.error(this.printparams.outSpatialReference);
       
       this.shelter = new LoadingIndicator({
         hidden: true
@@ -578,11 +577,19 @@ define([
         layoutItems.sort(function(a, b) {
           return (a.label > b.label) ? 1 : ((b.label > a.label) ? -1 : 0);
         });
-        this.layoutDijit.addOption(layoutItems);
-        if (this.defaultLayout) {
+        if (layoutItems.length > 0) {
+          this.layoutDijit.addOption(layoutItems);
+          if (this.defaultLayout) {
+            this.layoutDijit.set('value', this.defaultLayout);
+          } else {
+            this.layoutDijit.set('value', Layout_Template[0].defaultValue);
+          }
+        } else if (this.defaultLayout) {
+          this.layoutDijit.addOption([{
+            label: this.defaultLayout,
+            value: this.defaultLayout
+          }]);
           this.layoutDijit.set('value', this.defaultLayout);
-        } else {
-          this.layoutDijit.set('value', Layout_Template[0].defaultValue);
         }
 
         var Format = array.filter(data.parameters, function(param) {
@@ -601,11 +608,19 @@ define([
         formatItems.sort(function(a, b) {
           return (a.label > b.label) ? 1 : ((b.label > a.label) ? -1 : 0);
         });
-        this.formatDijit.addOption(formatItems);
-        if (this.defaultFormat) {
+        if (formatItems.length > 0) {
+          this.formatDijit.addOption(formatItems);
+          if (this.defaultFormat) {
+            this.formatDijit.set('value', this.defaultFormat);
+          } else {
+            this.formatDijit.set('value', Format[0].defaultValue);
+          }
+        } else if (this.defaultFormat) {
+          this.formatDijit.addOption([{
+            label: this.defaultFormat,
+            value: this.defaultFormat
+          }]);
           this.formatDijit.set('value', this.defaultFormat);
-        } else {
-          this.formatDijit.set('value', Format[0].defaultValue);
         }
       }
     },
@@ -675,7 +690,7 @@ define([
           count: this.count.toString(),
           icon: (form.format === "PDF") ? this.pdfIcon : this.imageIcon,
           docName: form.title,
-          title: form.format + ', ' + form.layout,
+          title: form.title + ', ' + form.format + ', ' + form.layout,
           fileHandle: fileHandel,
           nls: this.nls
         }).placeAt(this.printResultsNode, 'last');
