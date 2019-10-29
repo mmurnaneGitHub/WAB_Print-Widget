@@ -1,5 +1,5 @@
 {
-  "serviceURL": "https://arcgisprod02.tacoma.lcl/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task",
+  "serviceURL": "https://gis.cityoftacoma.org/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task",
   "defaultTitle": "Map Title",
   "defaultAuthor": "PDS | Permit Center",
   "defaultCopyright": "Copyright 2019",
